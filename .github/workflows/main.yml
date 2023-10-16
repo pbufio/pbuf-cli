@@ -1,0 +1,45 @@
+name: Build and Test pbuf-cli
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - 'main'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Go Environment
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.21.x
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54
+
+      - name: Build inside Docker
+        run: make build-in-docker
+
+      - name: Build Docker Image
+        run: make docker
+
+      - name: Run pbuf vendor in Docker and Verify Files
+        run: |
+          docker run --rm -v $(pwd):/app pbuf:latest /app/pbuf vendor
+          if [ ! -f /app/proto/examples/addressbook.proto ]; then
+            echo "Address book proto file from main branch is not found in the /app/proto directory!"
+            exit 1
+          fi
+          if [ ! -f /app/proto/examples/addressbook.proto ]; then
+            echo "Address book proto file from tag v24.4 is not found in the /app/proto directory!"
+            exit 1
+          fi
+        shell: bash
