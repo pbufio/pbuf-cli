@@ -43,7 +43,20 @@ func NewConfig(contents []byte) (*Config, error) {
 
 // Vendor function that iterate over the modules and vendor proto files from git repositories
 func Vendor(config *Config) error {
+	usr, err := user.Current()
+	if err != nil {
+		log.Printf("failed to get current user")
+		return err
+	}
+
+	netrcAuth, err := netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
+	if err != nil {
+		log.Printf("no .netrc file found. skipping auth")
+	}
+
 	for _, module := range config.Modules {
+		log.Printf("start vendoring .proto files. repo: %s, path: %s", module.Repository, module.Path)
+
 		var reference plumbing.ReferenceName
 		if module.Branch != "" {
 			// clone repository with branch
@@ -53,8 +66,6 @@ func Vendor(config *Config) error {
 			reference = plumbing.NewTagReferenceName(module.Tag)
 		}
 
-		usr, err := user.Current()
-		n, err := netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
 		parsed, err := url.Parse(module.Repository)
 		if err != nil {
 			log.Printf("failed to parse url: %s", module.Repository)
@@ -62,8 +73,8 @@ func Vendor(config *Config) error {
 		}
 
 		var auth transport.AuthMethod
-		if n != nil {
-			machine := n.Machine(parsed.Host)
+		if netrcAuth != nil {
+			machine := netrcAuth.Machine(parsed.Host)
 			if machine != nil {
 				auth = &http.BasicAuth{Username: usr.Username, Password: machine.Get("password")}
 			}
