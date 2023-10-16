@@ -25,8 +25,8 @@ jobs:
         with:
           version: v1.54
 
-      - name: Build inside Docker
-        run: make build-in-docker
+      - name: Build Go
+        run: CGO_ENABLED=0 GOOS=linux make build
 
       - name: Build Docker Image
         run: make docker
