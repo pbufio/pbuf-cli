@@ -10,10 +10,24 @@ The `pbuf` is a Command Line Interface (CLI) tool for PowerBuf, allowing you to 
 
 ### Installation
 
-To use `pbuf`, you must first ensure that you have `Go` installed on your system. After that, install application from source using the following commands:
+#### Binary
+
+Grab latest binaries from the releases page: https://github.com/pbufio/pbuf-cli/releases.
+
+#### From sources
+
+First, you must ensure that you have `Go` installed on your system. 
+
+After that, install application from source using the following commands:
 
 ```bash
-go install github.com/pbufio/pbuf-cli
+go install github.com/pbufio/pbuf-cli@latest
+```
+
+or for specific version:
+
+```bash
+go install github.com/pbufio/pbuf-cli@<tag>
 ```
 
 ---
