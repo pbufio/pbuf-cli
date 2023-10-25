@@ -12,11 +12,13 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Go Environment
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.21.x
 
@@ -40,6 +42,10 @@ jobs:
           fi
           if [ ! -f ./vendor/examples/addressbook.proto ]; then
             echo "Address book proto file from tag v24.4 is not found"
+            exit 1
+          fi
+          if [ ! -f ./vendor/custom/addressbook.proto ]; then
+            echo "Address book proto file for custom is not found"
             exit 1
           fi
         shell: bash

@@ -7,3 +7,7 @@ modules:
   - repository: https://github.com/protocolbuffers/protobuf
     path: examples/addressbook.proto
     tag: v24.4
+  - repository: https://github.com/protocolbuffers/protobuf
+    path: examples
+    tag: v24.4
+    out: custom

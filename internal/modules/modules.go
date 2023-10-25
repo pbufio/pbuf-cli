@@ -96,7 +96,13 @@ func Vendor(config *Config) error {
 			return err
 		}
 
-		modulePath := filepath.Dir(module.Path)
+		var modulePath string
+		if strings.HasSuffix(module.Path, ".proto") {
+			modulePath = filepath.Dir(module.Path)
+		} else {
+			modulePath = module.Path
+		}
+
 		baseDir := modulePath
 		if module.OutputFolder != "" {
 			baseDir = module.OutputFolder
