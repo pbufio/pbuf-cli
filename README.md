@@ -4,7 +4,7 @@
 
 ### PowerBuf CLI
 
-The `pbuf` is a Command Line Interface (CLI) tool for PowerBuf, allowing you to easily manage, and vendor modules.
+The `pbuf-cli` is a Command Line Interface (CLI) tool for PowerBuf, allowing you to easily manage, and vendor modules.
 
 ---
 
@@ -39,7 +39,7 @@ go install github.com/pbufio/pbuf-cli@<tag>
 The general structure of commands is:
 
 ```bash
-pbuf [command] [arguments...]
+pbuf-cli [command] [arguments...]
 ```
 
 #### Available Commands
@@ -49,7 +49,7 @@ pbuf [command] [arguments...]
    The vendor command allows you to vendor modules from provided configuration.
 
    ```bash
-   pbuf vendor
+   pbuf-cli vendor
    ```
 
    By default, this command reads the configuration from `pbuf.yaml`. The configuration provides details like the repository, branch or tag, path, and output directory for each module.
@@ -96,7 +96,7 @@ modules:
 
 ### Private repositories and authentication
 
-To authenticate with repositories that require authentication, `pbuf` uses `.netrc` file. Ensure your `.netrc` file is properly configured in your home directory with credentials.
+To authenticate with repositories that require authentication, `pbuf-cli` uses `.netrc` file. Ensure your `.netrc` file is properly configured in your home directory with credentials.
 
 ---
 
