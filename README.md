@@ -6,7 +6,7 @@
 
 The `pbuf-cli` is a Command Line Interface (CLI) tool for PowerBuf, allowing you to easily manage, and vendor modules.
 
-We recommend using `pbuf-cli` with the [PowerBuf Registry](https://github.com/pbufi-io/pbuf-registry) that will be released soon.
+We recommend using `pbuf-cli` with the [PowerBuf Registry](https://github.com/pbufiio/pbuf-registry).
 
 ---
 
