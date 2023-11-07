@@ -15,6 +15,8 @@ import (
 const timeout = 60 * time.Second
 
 func VendorRegistryModule(module *model.Module, client v1.RegistryClient) error {
+	log.Printf("start vendoring .proto files. module name: %s, path: %s", module.Name, module.Path)
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -74,6 +76,8 @@ func VendorRegistryModule(module *model.Module, client v1.RegistryClient) error 
 			return err
 		}
 	}
+
+	log.Printf("successfully vendoring .proto files. module name: %s, path: %s", module.Name, module.Path)
 
 	return nil
 }

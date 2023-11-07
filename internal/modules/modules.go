@@ -47,12 +47,18 @@ func Vendor(config *model.Config, client v1.RegistryClient) error {
 					log.Fatalf("no module tag found for module: %v", module)
 				}
 
-				return registry.VendorRegistryModule(module, client)
+				err := registry.VendorRegistryModule(module, client)
+				if err != nil {
+					log.Fatalf("failed to vendor module %s: %v", module.Name, err)
+				}
 			} else {
 				log.Fatalf("no repository found for module: %s", module.Name)
 			}
 		} else {
-			return git.VendorGitModule(module, netrcAuth)
+			err := git.VendorGitModule(module, netrcAuth)
+			if err != nil {
+				log.Fatalf("failed to vendor module %s: %v", module.Repository, err)
+			}
 		}
 	}
 
