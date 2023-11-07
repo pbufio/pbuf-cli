@@ -37,7 +37,7 @@ jobs:
 
       - name: Run pbuf vendor in Docker and Verify Files
         run: |
-          docker run --rm -v $(pwd)/vendor:/tmp/vendor -w /tmp/vendor pbuf sh -c "cp /app/pbuf.yaml /tmp/vendor && /app/pbuf vendor"
+          docker run --rm -v $(pwd)/vendor:/tmp/vendor -w /tmp/vendor pbuf-cli sh -c "cp /app/pbuf.yaml /tmp/vendor && /app/pbuf-cli vendor"
           if [ ! -f ./vendor/proto/addressbook.proto ]; then
             echo "Address book proto file from main branch is not found"
             exit 1

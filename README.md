@@ -6,6 +6,8 @@
 
 The `pbuf-cli` is a Command Line Interface (CLI) tool for PowerBuf, allowing you to easily manage, and vendor modules.
 
+We recommend using `pbuf-cli` with the [PowerBuf Registry](https://github.com/pbufi-io/pbuf-registry) that will be released soon.
+
 ---
 
 ### Installation
@@ -44,15 +46,105 @@ pbuf-cli [command] [arguments...]
 
 #### Available Commands
 
-1. **Vendor**
+##### Vendor
 
-   The vendor command allows you to vendor modules from provided configuration.
+The vendor command allows you to vendor modules from provided configuration.
 
-   ```bash
-   pbuf-cli vendor
-   ```
+```bash
+pbuf-cli vendor
+```
 
-   By default, this command reads the configuration from `pbuf.yaml`. The configuration provides details like the repository, branch or tag, path, and output directory for each module.
+By default, this command reads the configuration from `pbuf.yaml`. The configuration provides details like the repository, branch or tag, path, and output directory for each module.
+
+##### Register Module
+
+The register command allows you to register a module to the registry.
+    
+ ```bash
+ pbuf-cli modules register
+ ```
+
+You can register a module by providing the following details in `pbuf.yaml`:
+
+```yaml
+version: v1
+name: [module_name]
+...
+```
+
+Replace `[module_name]` with the name of the module you want to register.
+
+##### Get Module
+
+The get command allows you to get the information about a module from the registry.
+
+```bash
+pbuf-cli modules get [module_name]
+```
+
+Response example:
+```json
+{
+  "id": "b9f9898a-8510-4017-9618-5244176eb1b8",
+  "name": "pbufio/pbuf-registry",
+  "tags": [
+    "v0.0.0",
+    "v0.1.0"
+  ]
+}
+```
+
+##### List Modules
+
+The list command allows you to list all modules from the registry.
+
+```bash
+pbuf-cli modules list
+```
+
+Response example:
+```json
+[
+  {
+    "id": "b9f9898a-8510-4017-9618-5244176eb1b8",
+    "name": "pbufio/pbuf-registry"
+  },
+  {
+    "id": "b9f9898a-8510-4017-9618-5244176eb1b8",
+    "name": "pbufio/pbuf-cli"
+  }
+]
+```
+
+##### Push Module
+
+The push command allows you to push `.proto` files to the registry with a specific tag.
+
+```bash
+pbuf-cli modules push [tag]
+```
+
+Replace `[tag]` with the tag you want to push.
+
+#### Delete Tag
+
+The delete command allows you to delete a tag from the registry.
+
+```bash
+pbuf-cli modules delete-tag [tag]
+```
+
+The command deletes all the proto files associated with the tag.
+
+#### Delete Module
+
+The delete command allows you to delete a module from the registry.
+
+```bash
+pbuf-cli modules delete [module_name]
+```
+
+The command deletes all the tags and proto files associated with the module.
 
 ---
 
@@ -61,8 +153,18 @@ pbuf-cli [command] [arguments...]
 A typical `pbuf.yaml` file contains the following:
 
 ```yaml
-version: "1.0"
+version: v1
+name: [module_name]
+registry:
+  addr: [registry_url]
+  insecure: true # no tls support at the moment, but it will be added soon
 modules:
+  # use the registry to vendor .proto files
+  - name: [dependency_module_name]
+    path: [path_in_registry]
+    tag: [dependency_module_tag]
+    out: [output_folder_on_local]
+  # use a git repository to vendor .proto files
   - repository: [repository_url]
     path: [path_in_repository]
     branch: [branch_name]
@@ -70,8 +172,17 @@ modules:
     out: [output_folder_on_local]
 ```
 
-Replace placeholders with appropriate values:
+Replace main placeholders with appropriate values:
+- `[module_name]`: The name of the module you want to register.
+- `[registry_url]`: The URL of the pbuf-registry.
 
+Replace placeholders in the registry modules with appropriate values:
+- `[dependency_module_name]`: The name of the module you want to vendor.
+- `[path_in_registry]`: Path to the folder or file in the registry you want to vendor.
+- `[tag_name]`: Specific tag to vendor.
+- `[output_folder_on_local]`: Folder where the vendored content should be placed on your local machine.
+
+Replace placeholders in modules placed in git with appropriate values:
 - `[repository_url]`: The URL of the Git repository.
 - `[path_in_repository]`: Path to the folder or file in the repository you want to vendor.
 - `[branch_name]`: Specific branch name to clone (optional if tag is provided).
@@ -81,7 +192,15 @@ Replace placeholders with appropriate values:
 #### Examples
 ```yaml
 version: v1
+name: pbuf-cli
+registry:
+   addr: pbuf.cloud:8081
+   insecure: true
 modules:
+    # will copy api/v1/registry.proto file to third_party/api/v1/registry.proto
+  - name: pbufio/pbuf-registry
+    tag: v0.0.1
+    out: third_party
   # will copy examples/addressbook.proto file to proto/addressbook.proto
   - repository: https://github.com/protocolbuffers/protobuf
     path: examples/addressbook.proto

@@ -1,10 +1,14 @@
 package cmd
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 
+	v1 "github.com/pbufio/pbuf-cli/gen/api/v1"
+	"github.com/pbufio/pbuf-cli/internal/model"
 	"github.com/pbufio/pbuf-cli/internal/modules"
+	"github.com/pbufio/pbuf-cli/internal/registry"
 	"github.com/spf13/cobra"
 )
 
@@ -12,40 +16,250 @@ import (
 func NewRootCmd() *cobra.Command {
 	// create root command
 	rootCmd := &cobra.Command{
-		Use:   "pbuf",
+		Use:   "pbuf-cli",
 		Short: "PowerBuf CLI",
 		Long:  "PowerBuf CLI is a command line interface for PowerBuf",
 		Run: func(cmd *cobra.Command, args []string) {
 			// do nothing
 		},
 	}
-	// add subcommands
-	rootCmd.AddCommand(NewVendorCmd())
+
+	const modulesConfigFilename = "pbuf.yaml"
+	// read the file (modulesConfigFilename) and call ModulesConfig.Vendor()
+	file, err := os.ReadFile(modulesConfigFilename)
+	if err != nil {
+		log.Fatalf("failed to read file: %v", err)
+	}
+
+	modulesConfig, err := modules.NewConfig(file)
+	if err != nil {
+		log.Fatalf("failed to create modules config: %v", err)
+	}
+
+	if modulesConfig.HasRegistry() {
+		registryClient := registry.NewInsecureClient(modulesConfig)
+		rootCmd.AddCommand(NewModuleCmd(modulesConfig, registryClient))
+		rootCmd.AddCommand(NewVendorCmd(modulesConfig, registryClient))
+	} else {
+		rootCmd.AddCommand(NewVendorCmd(modulesConfig, nil))
+	}
 
 	return rootCmd
 }
 
+func NewModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Command {
+	// create module command
+	moduleCmd := &cobra.Command{
+		Use:   "modules",
+		Short: "Modules",
+		Long:  "Modules is a command to manage modules",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
+	}
+
+	// add subcommands
+	moduleCmd.AddCommand(NewRegisterModuleCmd(config, client))
+	moduleCmd.AddCommand(NewPushModuleCmd(config, client))
+	moduleCmd.AddCommand(NewDeleteTagCmd(config, client))
+	moduleCmd.AddCommand(NewDeleteModuleCmd(config, client))
+
+	moduleCmd.AddCommand(NewListModulesCmd(config, client))
+	moduleCmd.AddCommand(NewGetModuleCmd(config, client))
+
+	return moduleCmd
+}
+
+func NewRegisterModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Command {
+	// create register module command
+	registerModuleCmd := &cobra.Command{
+		Use:   "register",
+		Short: "Register",
+		Long:  "Register is a command to register modules",
+		Args:  cobra.ExactArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			if config.Name == "" {
+				log.Fatalf("module name is required. see pbuf.yaml reference")
+			}
+
+			module, err := client.RegisterModule(cmd.Context(), &v1.RegisterModuleRequest{
+				Name: config.Name,
+			})
+
+			if err != nil {
+				log.Fatalf("failed to register: %v", err)
+			}
+
+			log.Printf("module %s successfully registered", module.Name)
+		},
+	}
+
+	return registerModuleCmd
+}
+
+func NewPushModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Command {
+	// create push module command
+	pushModuleCmd := &cobra.Command{
+		Use:   "push [tag]",
+		Short: "Push",
+		Long:  "Push is a command to push modules",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			if config.Name == "" {
+				log.Fatalf("module name is required. see pbuf.yaml reference")
+			}
+
+			tag := args[0]
+
+			protoFiles, err := registry.CollectProtoFilesInDirs(config.Export.Paths)
+			if err != nil {
+				log.Fatalf("failed to collect proto files: %v", err)
+			}
+
+			module, err := client.PushModule(cmd.Context(), &v1.PushModuleRequest{
+				ModuleName: config.Name,
+				Tag:        tag,
+				Protofiles: protoFiles,
+			})
+
+			if err != nil {
+				log.Fatalf("failed to push: %v", err)
+			}
+
+			log.Printf("module %s successfully pushed", module.Name)
+		},
+	}
+
+	return pushModuleCmd
+}
+
+func NewDeleteTagCmd(config *model.Config, client v1.RegistryClient) *cobra.Command {
+	// create delete tag command
+	deleteTagCmd := &cobra.Command{
+		Use:   "delete-tag [tag]",
+		Short: "Delete tag",
+		Long:  "Delete tag is a command to delete tags",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			if config.Name == "" {
+				log.Fatalf("module name is required. see pbuf.yaml reference")
+			}
+
+			tag := args[0]
+
+			if tag == "" {
+				log.Fatalf("tag is required")
+			}
+
+			_, err := client.DeleteModuleTag(cmd.Context(), &v1.DeleteModuleTagRequest{
+				Name: config.Name,
+				Tag:  tag,
+			})
+
+			if err != nil {
+				log.Fatalf("failed to delete tag: %v", err)
+			}
+
+			log.Printf("tag %s successfully deleted", tag)
+		},
+	}
+
+	return deleteTagCmd
+}
+
+func NewDeleteModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Command {
+	// create delete module command
+	deleteModuleCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete",
+		Long:  "Delete is a command to delete modules",
+		Args:  cobra.ExactArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			if config.Name == "" {
+				log.Fatalf("module name is required. see pbuf.yaml reference")
+			}
+
+			_, err := client.DeleteModule(cmd.Context(), &v1.DeleteModuleRequest{
+				Name: config.Name,
+			})
+
+			if err != nil {
+				log.Fatalf("failed to delete: %v", err)
+			}
+
+			log.Printf("module %s successfully deleted", config.Name)
+		},
+	}
+
+	return deleteModuleCmd
+}
+
+// NewGetModuleCmd creates cobra command for get module
+func NewGetModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Command {
+	// create get module command
+	getModuleCmd := &cobra.Command{
+		Use:   "get [module_name]",
+		Short: "Get",
+		Long:  "Get is a command to get modules",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			moduleName := args[0]
+
+			module, err := client.GetModule(cmd.Context(), &v1.GetModuleRequest{
+				Name: moduleName,
+			})
+
+			if err != nil {
+				log.Fatalf("failed to get: %v", err)
+			}
+
+			// print as json pretty
+			marshalled, err := json.MarshalIndent(module, "", "  ")
+			if err != nil {
+				log.Fatalf("failed to marshal module: %v", err)
+			}
+			log.Printf("%+v", string(marshalled))
+		},
+	}
+
+	return getModuleCmd
+}
+
+// NewListModulesCmd creates cobra command for list modules
+func NewListModulesCmd(config *model.Config, client v1.RegistryClient) *cobra.Command {
+	// create list modules command
+	listModulesCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List",
+		Long:  "List is a command to list modules",
+		Args:  cobra.ExactArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			modulesList, err := client.ListModules(cmd.Context(), &v1.ListModulesRequest{})
+			if err != nil {
+				log.Fatalf("failed to fetch modules list: %v", err)
+			}
+
+			// print as json pretty
+			marshalled, err := json.MarshalIndent(modulesList, "", "  ")
+			if err != nil {
+				log.Fatalf("failed to marshal modules list: %v", err)
+			}
+			log.Printf("%+v", string(marshalled))
+		},
+	}
+
+	return listModulesCmd
+}
+
 // NewVendorCmd creates cobra command for vendor
-func NewVendorCmd() *cobra.Command {
-	const modulesConfigFilename = "pbuf.yaml"
+func NewVendorCmd(modulesConfig *model.Config, client v1.RegistryClient) *cobra.Command {
 	// create vendor command
 	vendorCmd := &cobra.Command{
 		Use:   "vendor",
 		Short: "Vendor",
 		Long:  "Vendor is a command to vendor modules",
 		Run: func(cmd *cobra.Command, args []string) {
-			// read the file (modulesConfigFilename) and call ModulesConfig.Vendor()
-			file, err := os.ReadFile(modulesConfigFilename)
-			if err != nil {
-				log.Fatalf("failed to read file: %v", err)
-			}
-
-			modulesConfig, err := modules.NewConfig(file)
-			if err != nil {
-				log.Fatalf("failed to create modules config: %v", err)
-			}
-
-			err = modules.Vendor(modulesConfig)
+			err := modules.Vendor(modulesConfig, client)
 			if err != nil {
 				log.Fatalf("failed to vendor: %v", err)
 			}

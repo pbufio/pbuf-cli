@@ -1,7 +1,22 @@
+.PHONY: vendor
+# vendor modules
+vendor:
+	pbuf-cli vendor
+
+.PHONY: vendor-gen
+# gen modules
+vendor-gen:
+	buf generate --exclude-path third_party/google
+
+.PHONY: vendor-all
+vendor-all:
+	make vendor
+	make vendor-gen
+
 .PHONY: build
 # build
 build:
-	mkdir -p bin/ && go build -o ./bin/pbuf .
+	mkdir -p bin/ && go build -o ./bin/pbuf-cli .
 
 .PHONY: build-in-docker
 # build in docker
@@ -17,7 +32,7 @@ build-in-docker:
 .PHONY: docker
 # docker
 docker:
-	docker build -t pbuf:latest .
+	docker build -t pbuf-cli:latest .
 
 .PHONY: lint
 # lint
