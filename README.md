@@ -158,6 +158,9 @@ name: [module_name]
 registry:
   addr: [registry_url]
   insecure: true # no tls support at the moment, but it will be added soon
+export:
+  paths:
+    - [proto_files_path]
 modules:
   # use the registry to vendor .proto files
   - name: [dependency_module_name]
@@ -173,23 +176,42 @@ modules:
 ```
 
 Replace main placeholders with appropriate values:
-- `[module_name]`: The name of the module you want to register.
+- `[module_name]`: The module name you want to register.
 - `[registry_url]`: The URL of the pbuf-registry.
+- `[proto_files_path]: One or several paths that contain `.proto` files.
 
 Replace placeholders in the registry modules with appropriate values:
-- `[dependency_module_name]`: The name of the module you want to vendor.
+- `[dependency_module_name]`: The module name you want to vendor.
 - `[path_in_registry]`: Path to the folder or file in the registry you want to vendor.
 - `[tag_name]`: Specific tag to vendor.
-- `[output_folder_on_local]`: Folder where the vendored content should be placed on your local machine.
+- `[output_folder_on_local]`: Folder where the vendor content should be placed on your local machine.
 
 Replace placeholders in modules placed in git with appropriate values:
 - `[repository_url]`: The URL of the Git repository.
 - `[path_in_repository]`: Path to the folder or file in the repository you want to vendor.
 - `[branch_name]`: Specific branch name to clone (optional if tag is provided).
 - `[tag_name]`: Specific tag to clone (optional if branch is provided).
-- `[output_folder_on_local]`: Folder where the vendored content should be placed on your local machine.
+- `[output_folder_on_local]`: Folder where the vendor content should be placed on your local machine.
 
 #### Examples
+
+#### Push Module
+```yaml
+version: v1
+name: pbufio/pbuf-registry
+registry:
+  addr: pbuf.cloud:8081
+  insecure: true
+# all `.proto` files from `api` and `entities` folders
+# will be exported as the module proto files
+export:
+  paths:
+    - api
+    - entities
+modules: []
+```
+
+#### Vendor Modules
 ```yaml
 version: v1
 name: pbuf-cli
@@ -197,7 +219,7 @@ registry:
    addr: pbuf.cloud:8081
    insecure: true
 modules:
-    # will copy api/v1/registry.proto file to third_party/api/v1/registry.proto
+  # will copy api/v1/registry.proto file to third_party/api/v1/registry.proto
   - name: pbufio/pbuf-registry
     tag: v0.0.1
     out: third_party
@@ -206,7 +228,7 @@ modules:
     path: examples/addressbook.proto
     branch: main
     out: proto
-   # will copy examples folder to examples folder
+  # will copy examples folder to examples folder
   - repository: https://github.com/protocolbuffers/protobuf
     path: examples
     tag: v24.4
