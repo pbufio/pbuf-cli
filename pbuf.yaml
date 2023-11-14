@@ -1,11 +1,12 @@
 version: v1
-name: pbuf-cli
+name: pbufio/pbuf-cli
 registry:
   addr: pbuf.cloud:8081
   insecure: true
 modules:
   - name: pbufio/pbuf-registry
-    tag: v0.0.1
+    tag: v0.2.0
+    path: api/pbuf-registry
     out: third_party
   - name: googleapis
     repository: https://github.com/googleapis/googleapis
