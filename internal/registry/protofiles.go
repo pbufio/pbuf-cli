@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-billy/v5/util"
-	v1 "github.com/pbufio/pbuf-cli/gen/api/v1"
+	v1 "github.com/pbufio/pbuf-cli/gen/pbuf-registry/v1"
 )
 
 func CollectProtoFilesInDirs(dirs []string) ([]*v1.ProtoFile, error) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	v1 "github.com/pbufio/pbuf-cli/gen/api/v1"
+	v1 "github.com/pbufio/pbuf-cli/gen/pbuf-registry/v1"
 	"github.com/pbufio/pbuf-cli/internal/model"
 )
 

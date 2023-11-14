@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	v1 "github.com/pbufio/pbuf-cli/gen/api/v1"
+	v1 "github.com/pbufio/pbuf-cli/gen/pbuf-registry/v1"
 	"github.com/pbufio/pbuf-cli/internal/model"
 	"github.com/pbufio/pbuf-cli/internal/modules"
 	"github.com/pbufio/pbuf-cli/internal/registry"
@@ -116,10 +116,23 @@ func NewPushModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Com
 				log.Fatalf("failed to collect proto files: %v", err)
 			}
 
+			var dependencies []*v1.Dependency
+			for _, dependency := range config.Modules {
+				if dependency.Name != "" && dependency.Repository == "" {
+					dependencies = append(dependencies, &v1.Dependency{
+						Name: dependency.Name,
+						Tag:  dependency.Tag,
+					})
+				}
+			}
+
+			log.Printf("pushing module %s with tag %s", config.Name, tag)
+
 			module, err := client.PushModule(cmd.Context(), &v1.PushModuleRequest{
-				ModuleName: config.Name,
-				Tag:        tag,
-				Protofiles: protoFiles,
+				ModuleName:   config.Name,
+				Tag:          tag,
+				Protofiles:   protoFiles,
+				Dependencies: dependencies,
 			})
 
 			if err != nil {
@@ -213,12 +226,27 @@ func NewGetModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Comm
 				log.Fatalf("failed to get: %v", err)
 			}
 
+			moduleDependencies, err := client.GetModuleDependencies(cmd.Context(), &v1.GetModuleDependenciesRequest{
+				Name: moduleName,
+			})
+
+			if err != nil {
+				log.Fatalf("failed to fetch dependencies: %v", err)
+			}
+
 			// print as json pretty
 			marshalled, err := json.MarshalIndent(module, "", "  ")
 			if err != nil {
 				log.Fatalf("failed to marshal module: %v", err)
 			}
-			log.Printf("%+v", string(marshalled))
+			log.Printf("module:\n%+v\n", string(marshalled))
+
+			// print deps as json pretty
+			marshalled, err = json.MarshalIndent(moduleDependencies, "", "  ")
+			if err != nil {
+				log.Fatalf("failed to marshal module dependencies: %v", err)
+			}
+			log.Printf("module dependencies:\n%+v\n", string(marshalled))
 		},
 	}
 
