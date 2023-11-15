@@ -35,13 +35,16 @@ func VendorRegistryModule(module *model.Module, client v1.RegistryClient) error 
 		outputPath := module.OutputFolder
 
 		if module.Path != "" {
-			modulePath := filepath.Dir(module.Path)
+			modulePath := module.Path
 
 			if strings.HasSuffix(module.Path, ".proto") {
 				// skip if the file is not in the module path
 				if originalFilename != module.Path {
 					continue
 				}
+
+				// get directory
+				modulePath = filepath.Dir(module.Path)
 			} else {
 				// skip if the file is not in the module path
 				if !strings.HasPrefix(originalFilename, modulePath) {
@@ -50,7 +53,7 @@ func VendorRegistryModule(module *model.Module, client v1.RegistryClient) error 
 			}
 
 			if outputPath != "" {
-				originalFilename = strings.Replace(originalFilename, filepath.Dir(module.Path), outputPath, 1)
+				originalFilename = strings.Replace(originalFilename, modulePath, outputPath, 1)
 			}
 		} else {
 			if outputPath != "" {
