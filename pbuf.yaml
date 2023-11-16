@@ -8,6 +8,7 @@ modules:
     tag: v0.2.0
     path: api/pbuf-registry
     out: third_party/pbuf-registry
+    gen_out: gen/pbuf-registry
   - name: googleapis
     repository: https://github.com/googleapis/googleapis
     path: google/api

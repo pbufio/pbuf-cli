@@ -5,7 +5,7 @@ package pbufregistry.v1;
 import "google/api/annotations.proto";
 import "pbuf-registry/v1/entities.proto";
 
-option go_package = "pbufregistry/api/v1;v1";
+option go_package = "github.com/pbufio/pbuf-cli/gen/pbuf-registry/v1;v1";
 
 // Registry service definition
 service Registry {

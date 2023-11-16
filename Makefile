@@ -39,6 +39,11 @@ docker:
 lint:
 	golangci-lint run -v --timeout 10m
 
+.PHONE: test
+# test
+test:
+	go test ./... -cover
+
 # show help
 help:
 	@echo ''
