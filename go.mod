@@ -7,6 +7,7 @@ require (
 	github.com/go-git/go-git/v5 v5.9.0
 	github.com/jdx/go-netrc v1.0.0
 	github.com/spf13/cobra v1.7.0
+	github.com/yoheimuta/go-protoparser/v4 v4.9.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0

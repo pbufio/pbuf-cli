@@ -14,12 +14,13 @@ type Config struct {
 }
 
 type Module struct {
-	Name         string `yaml:"name"`
-	Repository   string `yaml:"repository"`
-	Path         string `yaml:"path"`
-	Branch       string `yaml:"branch"`
-	Tag          string `yaml:"tag"`
-	OutputFolder string `yaml:"out"`
+	Name                 string `yaml:"name"`
+	Repository           string `yaml:"repository"`
+	Path                 string `yaml:"path"`
+	Branch               string `yaml:"branch"`
+	Tag                  string `yaml:"tag"`
+	OutputFolder         string `yaml:"out"`
+	GenerateOutputFolder string `yaml:"gen_out"`
 }
 
 func (c *Config) HasRegistry() bool {

@@ -10,11 +10,13 @@ import (
 
 	v1 "github.com/pbufio/pbuf-cli/gen/pbuf-registry/v1"
 	"github.com/pbufio/pbuf-cli/internal/model"
+	"github.com/pbufio/pbuf-cli/internal/patcher"
 )
 
 const timeout = 60 * time.Second
 
-func VendorRegistryModule(module *model.Module, client v1.RegistryClient) error {
+// VendorRegistryModule function that iterate over the modules and vendor proto files from PBUF registry
+func VendorRegistryModule(module *model.Module, client v1.RegistryClient, patchers []patcher.Patcher) error {
 	log.Printf("start vendoring .proto files. module name: %s, path: %s", module.Name, module.Path)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -61,7 +63,23 @@ func VendorRegistryModule(module *model.Module, client v1.RegistryClient) error 
 			}
 		}
 
-		err := os.MkdirAll(filepath.Dir(originalFilename), os.ModePerm)
+		var content string
+		outputDir := filepath.Dir(originalFilename)
+
+		if module.GenerateOutputFolder != "" {
+			content, err = patcher.ApplyPatchers(
+				patchers,
+				strings.Replace(outputDir, module.OutputFolder, module.GenerateOutputFolder, 1),
+				protoFile.Content,
+			)
+			if err != nil {
+				log.Printf("failed to patch file %s: %v", originalFilename, err)
+			}
+		} else {
+			content = protoFile.Content
+		}
+
+		err = os.MkdirAll(outputDir, os.ModePerm)
 		if err != nil {
 			log.Printf("failed to create directory: %s", outputPath)
 			return err
@@ -73,7 +91,7 @@ func VendorRegistryModule(module *model.Module, client v1.RegistryClient) error 
 			return err
 		}
 
-		_, err = copiedFile.Write([]byte(protoFile.Content))
+		_, err = copiedFile.Write([]byte(content))
 		if err != nil {
 			log.Printf("failed to write file contents: %s", outputPath)
 			return err

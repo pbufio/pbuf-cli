@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pbufregistry.v1;
 
-option go_package = "pbufregistry/api/v1;v1";
+option go_package = "github.com/pbufio/pbuf-cli/gen/pbuf-registry/v1;v1";
 
 // Module is a module registered in the registry.
 message Module {

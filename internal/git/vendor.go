@@ -17,9 +17,10 @@ import (
 	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/jdx/go-netrc"
 	"github.com/pbufio/pbuf-cli/internal/model"
+	"github.com/pbufio/pbuf-cli/internal/patcher"
 )
 
-func VendorGitModule(module *model.Module, netrcAuth *netrc.Netrc) error {
+func VendorGitModule(module *model.Module, netrcAuth *netrc.Netrc, patchers []patcher.Patcher) error {
 	log.Printf("start vendoring .proto files. repo: %s, path: %s", module.Repository, module.Path)
 
 	var reference plumbing.ReferenceName
@@ -118,13 +119,33 @@ func VendorGitModule(module *model.Module, netrcAuth *netrc.Netrc) error {
 			return err
 		}
 
+		var content string
+		outputDir := filepath.Dir(outputPath)
+
+		if module.GenerateOutputFolder != "" {
+			content, err = patcher.ApplyPatchers(
+				patchers,
+				strings.Replace(outputDir, module.OutputFolder, module.GenerateOutputFolder, 1),
+				string(fileContents),
+			)
+			if err != nil {
+				log.Printf("failed to patch file %s: %v", outputPath, err)
+			}
+		} else {
+			content = string(fileContents)
+		}
+
+		if err != nil {
+			log.Printf("failed to patch file %s: %v", outputPath, err)
+		}
+
 		copiedFile, err := os.Create(outputPath)
 		if err != nil {
 			log.Printf("failed to create file: %s", outputPath)
 			return err
 		}
 
-		_, err = copiedFile.Write(fileContents)
+		_, err = copiedFile.Write([]byte(content))
 		if err != nil {
 			log.Printf("failed to write file contents: %s", outputPath)
 			return err

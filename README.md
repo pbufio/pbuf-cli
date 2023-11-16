@@ -167,12 +167,14 @@ modules:
     path: [path_in_registry]
     tag: [dependency_module_tag]
     out: [output_folder_on_local]
+    gen_out: [gen_output_folder_on_local] # optional, if provided then patchers will be applied
   # use a git repository to vendor .proto files
   - repository: [repository_url]
     path: [path_in_repository]
     branch: [branch_name]
     tag: [tag_name]
     out: [output_folder_on_local]
+    gen_out: [gen_output_folder_on_local] # optional, if provided then patchers will be applied
 ```
 
 Replace main placeholders with appropriate values:
@@ -185,6 +187,7 @@ Replace placeholders in the registry modules with appropriate values:
 - `[path_in_registry]`: Path to the folder or file in the registry you want to vendor.
 - `[tag_name]`: Specific tag to vendor.
 - `[output_folder_on_local]`: Folder where the vendor content should be placed on your local machine.
+- `[gen_output_folder_on_local]`: Folder where the generated content should be placed on your local machine. Used to patch `go_package` option
 
 Replace placeholders in modules placed in git with appropriate values:
 - `[repository_url]`: The URL of the Git repository.
@@ -192,6 +195,7 @@ Replace placeholders in modules placed in git with appropriate values:
 - `[branch_name]`: Specific branch name to clone (optional if tag is provided).
 - `[tag_name]`: Specific tag to clone (optional if branch is provided).
 - `[output_folder_on_local]`: Folder where the vendor content should be placed on your local machine.
+- `[gen_output_folder_on_local]`: Folder where the generated content should be placed on your local machine. Used to patch `go_package` option
 
 #### Examples
 
@@ -219,10 +223,16 @@ registry:
    addr: pbuf.cloud:8081
    insecure: true
 modules:
-  # will copy api/v1/registry.proto file to third_party/api/v1/registry.proto
+  # will copy api/v1/*.proto file to third_party/api/v1/*.proto
   - name: pbufio/pbuf-registry
     tag: v0.0.1
     out: third_party
+  # will copy api/v1/*.proto file to third_party/api/v1/*.proto
+  # and add or change `go_package` option to `<go_mod_name>/gen/pbuf-registry/api/v1`
+  - name: pbufio/pbuf-registry
+    tag: v0.0.1
+    out: third_party
+    gen_out: gen
   # will copy examples/addressbook.proto file to proto/addressbook.proto
   - repository: https://github.com/protocolbuffers/protobuf
     path: examples/addressbook.proto
