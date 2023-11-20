@@ -126,6 +126,14 @@ pbuf-cli modules push [tag]
 
 Replace `[tag]` with the tag you want to push.
 
+#### Update Modules Tags
+
+The update command allows you to update the modules' tags to the latest in the registry. The command saves the latest tags in the `pbuf.yaml` file for each module.
+
+```bash
+pbuf-cli modules update
+```
+
 #### Delete Tag
 
 The delete command allows you to delete a tag from the registry.

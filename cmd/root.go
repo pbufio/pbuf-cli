@@ -19,14 +19,13 @@ func NewRootCmd() *cobra.Command {
 		Use:   "pbuf-cli",
 		Short: "PowerBuf CLI",
 		Long:  "PowerBuf CLI is a command line interface for PowerBuf",
-		Run: func(cmd *cobra.Command, args []string) {
-			// do nothing
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
 		},
 	}
 
-	const modulesConfigFilename = "pbuf.yaml"
-	// read the file (modulesConfigFilename) and call ModulesConfig.Vendor()
-	file, err := os.ReadFile(modulesConfigFilename)
+	// read the file (PbufConfigFilename) and call ModulesConfig.Vendor()
+	file, err := os.ReadFile(model.PbufConfigFilename)
 	if err != nil {
 		log.Fatalf("failed to read file: %v", err)
 	}
@@ -66,6 +65,8 @@ func NewModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Command
 
 	moduleCmd.AddCommand(NewListModulesCmd(config, client))
 	moduleCmd.AddCommand(NewGetModuleCmd(config, client))
+
+	moduleCmd.AddCommand(NewModuleUpdateCmd(config, client))
 
 	return moduleCmd
 }
@@ -277,6 +278,40 @@ func NewListModulesCmd(config *model.Config, client v1.RegistryClient) *cobra.Co
 	}
 
 	return listModulesCmd
+}
+
+func NewModuleUpdateCmd(config *model.Config, client v1.RegistryClient) *cobra.Command {
+	// create module update command
+	moduleUpdateCmd := &cobra.Command{
+		Use:   "update",
+		Short: "Update",
+		Long:  "Update is a command to update modules tags to the latest ones",
+		Args:  cobra.ExactArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			for _, module := range config.Modules {
+				if module.Name != "" && module.Repository == "" {
+					moduleWithTags, err := client.GetModule(cmd.Context(), &v1.GetModuleRequest{
+						Name: module.Name,
+					})
+
+					if err != nil {
+						log.Fatalf("failed to get module: %v", err)
+					}
+
+					if len(moduleWithTags.Tags) > 0 {
+						module.Tag = moduleWithTags.Tags[0]
+					}
+				}
+			}
+
+			err := config.Save()
+			if err != nil {
+				log.Fatalf("failed to update config. error during saving: %v", err)
+			}
+		},
+	}
+
+	return moduleUpdateCmd
 }
 
 // NewVendorCmd creates cobra command for vendor
