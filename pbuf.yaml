@@ -5,8 +5,8 @@ registry:
   insecure: true
 modules:
   - name: pbufio/pbuf-registry
-    tag: v0.2.0
     path: api/pbuf-registry
+    tag: v0.2.0
     out: third_party/pbuf-registry
     gen_out: gen/pbuf-registry
   - name: googleapis
