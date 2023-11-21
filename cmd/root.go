@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"os/user"
+	"path/filepath"
 
+	"github.com/jdx/go-netrc"
 	v1 "github.com/pbufio/pbuf-cli/gen/pbuf-registry/v1"
 	"github.com/pbufio/pbuf-cli/internal/model"
 	"github.com/pbufio/pbuf-cli/internal/modules"
@@ -36,12 +39,30 @@ func NewRootCmd() *cobra.Command {
 		log.Fatalf("failed to create modules config: %v", err)
 	}
 
-	if modulesConfig.HasRegistry() {
-		registryClient := registry.NewInsecureClient(modulesConfig)
-		rootCmd.AddCommand(NewModuleCmd(modulesConfig, registryClient))
-		rootCmd.AddCommand(NewVendorCmd(modulesConfig, registryClient))
+	var netrcAuth *netrc.Netrc
+
+	usr, err := user.Current()
+	if err == nil {
+		netrcAuth, err = netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
+		if err != nil {
+			log.Printf("no .netrc file found. skipping auth")
+		}
 	} else {
-		rootCmd.AddCommand(NewVendorCmd(modulesConfig, nil))
+		log.Printf("failed to fetch current user: %v", err)
+	}
+
+	if modulesConfig.HasRegistry() {
+		var registryClient v1.RegistryClient
+		if modulesConfig.Registry.Insecure {
+			registryClient = registry.NewInsecureClient(modulesConfig, netrcAuth)
+		} else {
+			registryClient = registry.NewSecureClient(modulesConfig, netrcAuth)
+		}
+
+		rootCmd.AddCommand(NewModuleCmd(modulesConfig, registryClient))
+		rootCmd.AddCommand(NewVendorCmd(modulesConfig, netrcAuth, registryClient))
+	} else {
+		rootCmd.AddCommand(NewVendorCmd(modulesConfig, netrcAuth, nil))
 	}
 
 	return rootCmd
@@ -280,14 +301,14 @@ func NewListModulesCmd(config *model.Config, client v1.RegistryClient) *cobra.Co
 }
 
 // NewVendorCmd creates cobra command for vendor
-func NewVendorCmd(modulesConfig *model.Config, client v1.RegistryClient) *cobra.Command {
+func NewVendorCmd(modulesConfig *model.Config, netrcAuth *netrc.Netrc, client v1.RegistryClient) *cobra.Command {
 	// create vendor command
 	vendorCmd := &cobra.Command{
 		Use:   "vendor",
 		Short: "Vendor",
 		Long:  "Vendor is a command to vendor modules",
 		Run: func(cmd *cobra.Command, args []string) {
-			err := modules.Vendor(modulesConfig, client)
+			err := modules.Vendor(modulesConfig, netrcAuth, client)
 			if err != nil {
 				log.Fatalf("failed to vendor: %v", err)
 			}

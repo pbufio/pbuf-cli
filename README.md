@@ -249,6 +249,18 @@ modules:
 
 To authenticate with repositories that require authentication, `pbuf-cli` uses `.netrc` file. Ensure your `.netrc` file is properly configured in your home directory with credentials.
 
+In case you are using `pbuf-cli` with the PBUF Registry with static token authentication, you can provide the token in your `.netrc` file as following:
+```
+machine <registry_host>
+token <token>
+```
+
+For instance:
+```
+machine pbuf.cloud
+token 1234567890
+```
+
 ---
 
 ### Contribution

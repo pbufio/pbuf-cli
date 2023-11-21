@@ -3,8 +3,6 @@ package modules
 import (
 	"log"
 	"os"
-	"os/user"
-	"path/filepath"
 
 	"github.com/jdx/go-netrc"
 	v1 "github.com/pbufio/pbuf-cli/gen/pbuf-registry/v1"
@@ -45,18 +43,7 @@ func newProtoPatchers() []patcher.Patcher {
 }
 
 // Vendor function that iterate over the modules and vendor proto files from git repositories
-func Vendor(config *model.Config, client v1.RegistryClient) error {
-	usr, err := user.Current()
-	if err != nil {
-		log.Printf("failed to get current user")
-		return err
-	}
-
-	netrcAuth, err := netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
-	if err != nil {
-		log.Printf("no .netrc file found. skipping auth")
-	}
-
+func Vendor(config *model.Config, netrcAuth *netrc.Netrc, client v1.RegistryClient) error {
 	patchers := newProtoPatchers()
 
 	for _, module := range config.Modules {

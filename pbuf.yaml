@@ -1,8 +1,7 @@
 version: v1
 name: pbufio/pbuf-cli
 registry:
-  addr: pbuf.cloud:8081
-  insecure: true
+  addr: pbuf.cloud
 modules:
   - name: pbufio/pbuf-registry
     tag: v0.2.0
