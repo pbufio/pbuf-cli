@@ -212,8 +212,8 @@ Replace placeholders in modules placed in git with appropriate values:
 version: v1
 name: pbufio/pbuf-registry
 registry:
-  addr: pbuf.cloud:8081
-  insecure: true
+  addr: pbuf.cloud
+  insecure: true # do not recommend for production usage
 # all `.proto` files from `api` and `entities` folders
 # will be exported as the module proto files
 export:
@@ -228,7 +228,7 @@ modules: []
 version: v1
 name: pbuf-cli
 registry:
-   addr: pbuf.cloud:8081
+   addr: pbuf.cloud
    insecure: true
 modules:
   # will copy api/v1/*.proto file to third_party/api/v1/*.proto
