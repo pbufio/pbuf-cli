@@ -13,8 +13,8 @@ const (
 type Config struct {
 	Version  string    `yaml:"version,omitempty"`
 	Name     string    `yaml:"name,omitempty"`
-	Registry *Registry `yaml:"registry,omitempty"`
-	Export   *Export   `yaml:"export,omitempty"`
+	Registry Registry  `yaml:"registry,omitempty"`
+	Export   Export    `yaml:"export,omitempty"`
 	Modules  []*Module `yaml:"modules,omitempty"`
 }
 

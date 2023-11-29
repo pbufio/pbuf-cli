@@ -45,10 +45,10 @@ func CreateInitCmd() *cobra.Command {
 			pbufYaml := &model.Config{
 				Version: "v1",
 				Name:    moduleName,
-				Registry: &model.Registry{
+				Registry: model.Registry{
 					Addr: registryURL,
 				},
-				Export: &model.Export{
+				Export: model.Export{
 					Paths: []string{
 						"api",
 						"proto",
