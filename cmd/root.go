@@ -55,7 +55,7 @@ func NewRootCmd() *cobra.Command {
 	if err == nil {
 		netrcAuth, err = netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
 		if err != nil {
-			log.Printf("no .netrc file found. skipping auth")
+			log.Printf("no .netrc file found")
 		}
 	} else {
 		log.Printf("failed to fetch current user: %v", err)
@@ -71,7 +71,7 @@ func NewRootCmd() *cobra.Command {
 
 		rootCmd.AddCommand(NewModuleCmd(modulesConfig, registryClient))
 		rootCmd.AddCommand(NewVendorCmd(modulesConfig, netrcAuth, registryClient))
-		rootCmd.AddCommand(NewAuthCmd(modulesConfig, netrcAuth))
+		rootCmd.AddCommand(NewAuthCmd(modulesConfig, usr, netrcAuth))
 	} else {
 		rootCmd.AddCommand(NewVendorCmd(modulesConfig, netrcAuth, nil))
 	}
@@ -79,7 +79,7 @@ func NewRootCmd() *cobra.Command {
 	return rootCmd
 }
 
-func NewAuthCmd(config *model.Config, auth *netrc.Netrc) *cobra.Command {
+func NewAuthCmd(config *model.Config, usr *user.User, auth *netrc.Netrc) *cobra.Command {
 	// create login command
 	authCmd := &cobra.Command{
 		Use:   "auth [token]",
@@ -88,7 +88,9 @@ func NewAuthCmd(config *model.Config, auth *netrc.Netrc) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if auth == nil {
-				auth = &netrc.Netrc{}
+				auth = &netrc.Netrc{
+					Path: filepath.Join(usr.HomeDir, ".netrc"),
+				}
 			}
 
 			token := args[0]
