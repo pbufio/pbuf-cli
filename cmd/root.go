@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"log"
+	"net"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -17,20 +18,30 @@ import (
 
 // NewRootCmd creates cobra root command via function
 func NewRootCmd() *cobra.Command {
+	// read the file (PbufConfigFilename) and call ModulesConfig.Vendor()
+	file, err := os.ReadFile(model.PbufConfigFilename)
+	configNotFound := os.IsNotExist(err)
+	if err != nil && !configNotFound {
+		log.Fatalf("failed to read %s file: %v", model.PbufConfigFilename, err)
+	}
+
 	// create root command
 	rootCmd := &cobra.Command{
 		Use:   "pbuf-cli",
 		Short: "PowerBuf CLI",
 		Long:  "PowerBuf CLI is a command line interface for PowerBuf",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if configNotFound {
+				log.Printf("no %s file found. please use `init` command", model.PbufConfigFilename)
+			}
+
 			return cmd.Help()
 		},
 	}
 
-	// read the file (PbufConfigFilename) and call ModulesConfig.Vendor()
-	file, err := os.ReadFile(model.PbufConfigFilename)
-	if err != nil {
-		log.Fatalf("failed to read file: %v", err)
+	if configNotFound {
+		rootCmd.AddCommand(CreateInitCmd())
+		return rootCmd
 	}
 
 	modulesConfig, err := modules.NewConfig(file)
@@ -60,11 +71,49 @@ func NewRootCmd() *cobra.Command {
 
 		rootCmd.AddCommand(NewModuleCmd(modulesConfig, registryClient))
 		rootCmd.AddCommand(NewVendorCmd(modulesConfig, netrcAuth, registryClient))
+		rootCmd.AddCommand(NewAuthCmd(modulesConfig, netrcAuth))
 	} else {
 		rootCmd.AddCommand(NewVendorCmd(modulesConfig, netrcAuth, nil))
 	}
 
 	return rootCmd
+}
+
+func NewAuthCmd(config *model.Config, auth *netrc.Netrc) *cobra.Command {
+	// create login command
+	authCmd := &cobra.Command{
+		Use:   "auth [token]",
+		Short: "Auth",
+		Long:  "Auth is a command to setup .netrc file with auth token",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			if auth == nil {
+				auth = &netrc.Netrc{}
+			}
+
+			token := args[0]
+
+			machine := config.Registry.Addr
+			machine, _, err := net.SplitHostPort(machine)
+			if err != nil {
+				machine = config.Registry.Addr
+			}
+
+			m := auth.Machine(machine)
+			if m == nil {
+				auth.AddMachine(machine, "unused", "unused")
+				m = auth.Machine(machine)
+			}
+			m.Set("token", token)
+
+			err = auth.Save()
+			if err != nil {
+				log.Fatalf("failed to save .netrc file: %v", err)
+			}
+		},
+	}
+
+	return authCmd
 }
 
 func NewModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Command {
