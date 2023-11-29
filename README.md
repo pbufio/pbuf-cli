@@ -46,6 +46,22 @@ pbuf-cli [command] [arguments...]
 
 #### Available Commands
 
+##### Init
+
+The init command allows you to initialize a new `pbuf.yaml` file.
+
+Interactively:
+```bash
+pbuf-cli init
+```
+
+Non-interactively:
+```bash
+pbuf-cli init module_name [registry_url]
+```
+
+Replace `[module_name]` with the name of the module you want to register. Replace `[registry_url]` with the URL of the PBUF Registry (by default it uses `pbuf.cloud`.
+
 ##### Vendor
 
 The vendor command allows you to vendor modules from provided configuration.
@@ -126,7 +142,7 @@ pbuf-cli modules push [tag]
 
 Replace `[tag]` with the tag you want to push.
 
-#### Update Modules Tags
+##### Update Modules Tags
 
 The update command allows you to update the modules' tags to the latest in the registry. The command saves the latest tags in the `pbuf.yaml` file for each module.
 
@@ -134,7 +150,7 @@ The update command allows you to update the modules' tags to the latest in the r
 pbuf-cli modules update
 ```
 
-#### Delete Tag
+##### Delete Tag
 
 The delete command allows you to delete a tag from the registry.
 
@@ -144,7 +160,7 @@ pbuf-cli modules delete-tag [tag]
 
 The command deletes all the proto files associated with the tag.
 
-#### Delete Module
+##### Delete Module
 
 The delete command allows you to delete a module from the registry.
 
