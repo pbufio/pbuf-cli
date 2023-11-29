@@ -57,10 +57,18 @@ pbuf-cli init
 
 Non-interactively:
 ```bash
-pbuf-cli init module_name [registry_url]
+pbuf-cli init [module_name] [registry_url]
 ```
 
 Replace `[module_name]` with the name of the module you want to register. Replace `[registry_url]` with the URL of the PBUF Registry (by default it uses `pbuf.cloud`.
+
+##### Auth (if applicable)
+
+The auth command allows you to authenticate with the registry. It saves the token in the `.netrc` file.
+
+```bash
+pbuf-cli auth [token]
+```
 
 ##### Vendor
 
