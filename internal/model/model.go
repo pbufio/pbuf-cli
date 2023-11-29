@@ -11,16 +11,20 @@ const (
 )
 
 type Config struct {
-	Version  string `yaml:"version,omitempty"`
-	Name     string `yaml:"name,omitempty"`
-	Registry struct {
-		Addr     string `yaml:"addr,omitempty"`
-		Insecure bool   `yaml:"insecure,omitempty"`
-	} `yaml:"registry,omitempty"`
-	Export struct {
-		Paths []string `yaml:"paths,omitempty"`
-	} `yaml:"export,omitempty"`
-	Modules []*Module `yaml:"modules,omitempty"`
+	Version  string    `yaml:"version,omitempty"`
+	Name     string    `yaml:"name,omitempty"`
+	Registry *Registry `yaml:"registry,omitempty"`
+	Export   *Export   `yaml:"export,omitempty"`
+	Modules  []*Module `yaml:"modules,omitempty"`
+}
+
+type Export struct {
+	Paths []string `yaml:"paths,omitempty"`
+}
+
+type Registry struct {
+	Addr     string `yaml:"addr,omitempty"`
+	Insecure bool   `yaml:"insecure,omitempty"`
 }
 
 type Module struct {

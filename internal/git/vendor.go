@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-billy/v5/util"
@@ -80,76 +81,77 @@ func VendorGitModule(module *model.Module, netrcAuth *netrc.Netrc, patchers []pa
 		return err
 	}
 
+	var wg = &sync.WaitGroup{}
+
 	err = util.Walk(fs, module.Path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Printf("failed to walk by path: %s", path)
 			return err
 		}
 
-		outputPath := strings.ReplaceAll(path, modulePath, baseDir)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 
-		if info.IsDir() {
-			err := os.Mkdir(outputPath, os.ModePerm)
-			if err != nil {
-				if os.IsExist(err) {
-					return nil
+			outputPath := strings.ReplaceAll(path, modulePath, baseDir)
+
+			if info.IsDir() {
+				err := os.Mkdir(outputPath, os.ModePerm)
+				if err != nil {
+					if os.IsExist(err) {
+						return
+					}
+
 				}
 
-				log.Printf("failed to create directory: %s", outputPath)
-				return err
+				return
 			}
 
-			return nil
-		}
+			// skip if not a proto file
+			if !strings.HasSuffix(path, ".proto") {
+				return
+			}
 
-		// skip if not a proto file
-		if !strings.HasSuffix(path, ".proto") {
-			return nil
-		}
+			file, err := fs.Open(path)
+			if err != nil {
+				log.Fatalf("failed to open file in repository: %s", path)
+			}
 
-		file, err := fs.Open(path)
-		if err != nil {
-			log.Printf("failed to open file in repository: %s", path)
-			return err
-		}
+			fileContents, err := io.ReadAll(file)
+			if err != nil {
+				log.Fatalf("failed to read file contents in repository: %s", path)
+			}
 
-		fileContents, err := io.ReadAll(file)
-		if err != nil {
-			log.Printf("failed to read file contents in repository: %s", path)
-			return err
-		}
+			var content string
+			outputDir := filepath.Dir(outputPath)
 
-		var content string
-		outputDir := filepath.Dir(outputPath)
+			if module.GenerateOutputFolder != "" {
+				content, err = patcher.ApplyPatchers(
+					patchers,
+					strings.Replace(outputDir, module.OutputFolder, module.GenerateOutputFolder, 1),
+					string(fileContents),
+				)
+				if err != nil {
+					log.Printf("failed to patch file %s: %v", outputPath, err)
+				}
+			} else {
+				content = string(fileContents)
+			}
 
-		if module.GenerateOutputFolder != "" {
-			content, err = patcher.ApplyPatchers(
-				patchers,
-				strings.Replace(outputDir, module.OutputFolder, module.GenerateOutputFolder, 1),
-				string(fileContents),
-			)
 			if err != nil {
 				log.Printf("failed to patch file %s: %v", outputPath, err)
 			}
-		} else {
-			content = string(fileContents)
-		}
 
-		if err != nil {
-			log.Printf("failed to patch file %s: %v", outputPath, err)
-		}
+			copiedFile, err := os.Create(outputPath)
+			if err != nil {
+				log.Fatalf("failed to create file: %s", outputPath)
+			}
 
-		copiedFile, err := os.Create(outputPath)
-		if err != nil {
-			log.Printf("failed to create file: %s", outputPath)
-			return err
-		}
-
-		_, err = copiedFile.Write([]byte(content))
-		if err != nil {
-			log.Printf("failed to write file contents: %s", outputPath)
-			return err
-		}
+			_, err = copiedFile.Write([]byte(content))
+			if err != nil {
+				log.Fatalf("failed to write file contents: %s", outputPath)
+			}
+		}()
 
 		return nil
 	})
@@ -157,6 +159,8 @@ func VendorGitModule(module *model.Module, netrcAuth *netrc.Netrc, patchers []pa
 	if err != nil {
 		return err
 	}
+
+	wg.Wait()
 
 	log.Printf("successfully vendoring .proto files. repo: %s, path: %s", module.Repository, module.Path)
 

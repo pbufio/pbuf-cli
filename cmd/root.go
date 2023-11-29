@@ -17,20 +17,30 @@ import (
 
 // NewRootCmd creates cobra root command via function
 func NewRootCmd() *cobra.Command {
+	// read the file (PbufConfigFilename) and call ModulesConfig.Vendor()
+	file, err := os.ReadFile(model.PbufConfigFilename)
+	configNotFound := os.IsNotExist(err)
+	if err != nil && !configNotFound {
+		log.Fatalf("failed to read %s file: %v", model.PbufConfigFilename, err)
+	}
+
 	// create root command
 	rootCmd := &cobra.Command{
 		Use:   "pbuf-cli",
 		Short: "PowerBuf CLI",
 		Long:  "PowerBuf CLI is a command line interface for PowerBuf",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if configNotFound {
+				log.Printf("no %s file found. please use `init` command", model.PbufConfigFilename)
+			}
+
 			return cmd.Help()
 		},
 	}
 
-	// read the file (PbufConfigFilename) and call ModulesConfig.Vendor()
-	file, err := os.ReadFile(model.PbufConfigFilename)
-	if err != nil {
-		log.Fatalf("failed to read file: %v", err)
+	if configNotFound {
+		rootCmd.AddCommand(CreateInitCmd())
+		return rootCmd
 	}
 
 	modulesConfig, err := modules.NewConfig(file)
