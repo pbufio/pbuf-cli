@@ -5,7 +5,7 @@ registry:
 modules:
   - name: pbufio/pbuf-registry
     path: api/pbuf-registry
-    tag: v0.2.0
+    tag: v0.3.0
     out: third_party/pbuf-registry
     gen_out: gen/pbuf-registry
   - name: googleapis
