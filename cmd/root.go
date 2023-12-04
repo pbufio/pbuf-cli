@@ -173,7 +173,7 @@ func NewRegisterModuleCmd(config *model.Config, client v1.RegistryClient) *cobra
 func NewPushModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Command {
 	// create push module command
 	pushModuleCmd := &cobra.Command{
-		Use:   "push [tag]",
+		Use:   "push [tag] [flags]",
 		Short: "Push",
 		Long:  "Push is a command to push modules",
 		Args:  cobra.ExactArgs(1),
@@ -183,6 +183,12 @@ func NewPushModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Com
 			}
 
 			tag := args[0]
+
+			isDraft, err := cmd.Flags().GetBool("draft")
+			if err != nil {
+				log.Fatalf("failed to get draft flag: %v", err)
+				return
+			}
 
 			protoFiles, err := registry.CollectProtoFilesInDirs(config.Export.Paths)
 			if err != nil {
@@ -206,6 +212,7 @@ func NewPushModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Com
 				Tag:          tag,
 				Protofiles:   protoFiles,
 				Dependencies: dependencies,
+				IsDraft:      isDraft,
 			})
 
 			if err != nil {
@@ -215,6 +222,8 @@ func NewPushModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Com
 			log.Printf("module %s successfully pushed", module.Name)
 		},
 	}
+
+	pushModuleCmd.PersistentFlags().Bool("draft", false, "push draft module")
 
 	return pushModuleCmd
 }
