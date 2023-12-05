@@ -296,8 +296,15 @@ func NewGetModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Comm
 		Use:   "get [module_name]",
 		Short: "Get",
 		Long:  "Get is a command to get modules",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.RangeArgs(0, 1),
 		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				if config.Name == "" {
+					log.Fatalf("module name is required. see pbuf.yaml reference")
+				}
+				args = append(args, config.Name)
+			}
+
 			moduleName := args[0]
 
 			module, err := client.GetModule(cmd.Context(), &v1.GetModuleRequest{
