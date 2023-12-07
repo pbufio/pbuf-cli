@@ -118,6 +118,8 @@ Response example:
 }
 ```
 
+> If `module_name` is not provided, the `name` from `pbuf.yaml` is used.
+
 ##### List Modules
 
 The list command allows you to list all modules from the registry.
@@ -145,10 +147,12 @@ Response example:
 The push command allows you to push `.proto` files to the registry with a specific tag.
 
 ```bash
-pbuf-cli modules push [tag]
+pbuf-cli modules push [tag] [--draft]
 ```
 
-Replace `[tag]` with the tag you want to push.
+Replace `[tag]` with the tag you want to push. Use the `--draft` flag to push a draft tag.
+
+> Draft tags are temporary tags that are automatically deleted in a week.
 
 ##### Update Modules Tags
 
