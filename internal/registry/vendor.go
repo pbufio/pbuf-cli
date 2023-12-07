@@ -104,6 +104,8 @@ func VendorRegistryModule(module *model.Module, client v1.RegistryClient, patche
 		}()
 	}
 
+	wg.Wait()
+
 	log.Printf("successfully vendoring .proto files. module name: %s, path: %s", module.Name, module.Path)
 
 	return nil
