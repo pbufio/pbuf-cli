@@ -3,7 +3,9 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strings"
 
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/pbufio/pbuf-cli/internal/model"
@@ -20,6 +22,12 @@ type textModel struct {
 	err       error
 }
 
+type textAreaModel struct {
+	question string
+	textArea textarea.Model
+	err      error
+}
+
 func CreateInitCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
@@ -29,6 +37,8 @@ func CreateInitCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			var moduleName string
 			var registryURL string
+			var modules []string
+			var paths []string
 
 			if len(args) > 0 {
 				moduleName = args[0]
@@ -40,6 +50,37 @@ func CreateInitCmd() *cobra.Command {
 			} else {
 				registryURL = askQuestionAndGetAnswer("Please provide registry URL", "pbuf.cloud")
 				moduleName = askQuestionAndGetAnswer("Please provide module name", "domain/module-name")
+				modules = askMultiQuestionAndGetAnswer("Please provide modules", "domain/module-name")
+				paths = askMultiQuestionAndGetAnswer("Please provide paths", "api")
+			}
+
+			var pbufModules []*model.Module
+			for _, module := range modules {
+				if module != "" {
+					pbufModules = append(pbufModules, &model.Module{
+						Name: module,
+					})
+				}
+			}
+
+			// backward compatibility
+			if len(pbufModules) == 0 {
+				pbufModules = append(pbufModules, &model.Module{
+					Name: "pbufio/pbuf-registry",
+				})
+			}
+
+			var pbufPaths []string
+			for _, path := range paths {
+				if path != "" {
+					pbufPaths = append(pbufPaths, path)
+				}
+			}
+
+			// backward compatibility
+			if len(pbufPaths) == 0 {
+				pbufPaths = append(pbufPaths, "api")
+				pbufPaths = append(pbufPaths, "proto")
 			}
 
 			pbufYaml := &model.Config{
@@ -49,16 +90,9 @@ func CreateInitCmd() *cobra.Command {
 					Addr: registryURL,
 				},
 				Export: model.Export{
-					Paths: []string{
-						"api",
-						"proto",
-					},
+					Paths: pbufPaths,
 				},
-				Modules: []*model.Module{
-					{
-						Name: "pbufio/pbuf-registry",
-					},
-				},
+				Modules: pbufModules,
 			}
 
 			err := pbufYaml.Save()
@@ -77,6 +111,8 @@ func askQuestionAndGetAnswer(question, placeholder string) string {
 	}
 	return m.(textModel).textInput.Value()
 }
+
+// text model section
 
 func createTextModel(question, placeholder string) textModel {
 	ti := textinput.New()
@@ -128,4 +164,71 @@ func (m textModel) View() string {
 		m.question,
 		m.textInput.View(),
 	) + "\n"
+}
+
+// text area model section
+
+func askMultiQuestionAndGetAnswer(question, placeholder string) []string {
+	initInfo := createTextAreaModel(question, placeholder)
+	m, err := tea.NewProgram(initInfo).Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return strings.Split(m.(textAreaModel).textArea.Value(), "\n")
+}
+
+func createTextAreaModel(question, placeholder string) textAreaModel {
+	ti := textarea.New()
+	ti.Placeholder = placeholder
+	ti.Focus()
+
+	return textAreaModel{
+		question: question,
+		textArea: ti,
+		err:      nil,
+	}
+}
+
+func (m textAreaModel) Init() tea.Cmd {
+	return textarea.Blink
+}
+
+func (m textAreaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyEsc:
+			if m.textArea.Focused() {
+				m.textArea.Blur()
+			}
+		case tea.KeyCtrlC:
+			return m, tea.Quit
+		default:
+			if !m.textArea.Focused() {
+				cmd = m.textArea.Focus()
+				cmds = append(cmds, cmd)
+			}
+		}
+
+	// We handle errors just like any other message
+	case errMsg:
+		m.err = msg
+		return m, nil
+	}
+
+	m.textArea, cmd = m.textArea.Update(msg)
+	cmds = append(cmds, cmd)
+	return m, tea.Batch(cmds...)
+}
+
+func (m textAreaModel) View() string {
+	return fmt.Sprintf(
+		"%s\n\n%s\n\n%s",
+		m.question,
+		m.textArea.View(),
+		"(ctrl+c to quit)",
+	) + "\n\n"
 }
