@@ -28,7 +28,7 @@ func NewInsecureClient(config *model.Config, netrcAuth *netrc.Netrc) v1.Registry
 		opts = append(opts, grpc.WithPerRPCCredentials(perRPCCredentials))
 	}
 
-	grpcClient, _ := grpc.Dial(addr, opts...)
+	grpcClient, _ := grpc.NewClient(addr, opts...)
 
 	return v1.NewRegistryClient(grpcClient)
 }
@@ -56,7 +56,7 @@ func NewSecureClient(config *model.Config, netrcAuth *netrc.Netrc) v1.RegistryCl
 		opts = append(opts, grpc.WithPerRPCCredentials(perRPCCredentials))
 	}
 
-	grpcClient, _ := grpc.Dial(addr, opts...)
+	grpcClient, _ := grpc.NewClient(addr, opts...)
 
 	return v1.NewRegistryClient(grpcClient)
 }

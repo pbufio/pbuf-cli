@@ -27,7 +27,7 @@ func NewRootCmd() *cobra.Command {
 
 	// create root command
 	rootCmd := &cobra.Command{
-		Use:   "pbuf-cli",
+		Use:   "pbuf",
 		Short: "PowerBuf CLI",
 		Long:  "PowerBuf CLI is a command line interface for PowerBuf",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -53,10 +53,8 @@ func NewRootCmd() *cobra.Command {
 
 	usr, err := user.Current()
 	if err == nil {
-		netrcAuth, err = netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
-		if err != nil {
-			log.Printf("no .netrc file found")
-		}
+		netrcAuth, _ = netrc.Parse(filepath.Join(usr.HomeDir, ".netrc"))
+		// Ignore error if .netrc doesn't exist - auth command will create it
 	} else {
 		log.Printf("failed to fetch current user: %v", err)
 	}

@@ -1,8 +1,8 @@
-FROM bash:alpine3.16
+FROM bash:alpine3.23
 
 WORKDIR /app
 
 COPY ./e2e/pbuf.yaml /app
-COPY ./bin/pbuf-cli /app/pbuf-cli
+COPY ./bin/pbuf /app/pbuf
 
-CMD ["/app/pbuf-cli"]
+CMD ["/app/pbuf"]
