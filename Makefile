@@ -1,7 +1,7 @@
 .PHONY: vendor
 # vendor modules
 vendor:
-	pbuf-cli vendor
+	pbuf vendor
 
 .PHONY: vendor-gen
 # gen modules
@@ -16,7 +16,7 @@ vendor-all:
 .PHONY: build
 # build
 build:
-	mkdir -p bin/ && go build -o ./bin/pbuf-cli .
+	mkdir -p bin/ && go build -o ./bin/pbuf .
 
 .PHONY: build-in-docker
 # build in docker
@@ -32,7 +32,7 @@ build-in-docker:
 .PHONY: docker
 # docker
 docker:
-	docker build -t pbuf-cli:latest .
+	docker build -t pbuf:latest .
 
 .PHONY: lint
 # lint
