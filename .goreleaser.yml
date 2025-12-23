@@ -22,7 +22,7 @@ builds:
 archives:
   - id: pbuf
     format: tar.gz
-    name_template: "pbuf_{{ .Version }}_{{ .Os }}_{{ .arch }}"
+    name_template: "pbuf_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
