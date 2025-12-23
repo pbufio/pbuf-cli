@@ -51,7 +51,9 @@ fi
 echo "Latest version: $LATEST_VERSION"
 
 # Construct download URL
-ARCHIVE_NAME="pbuf_${LATEST_VERSION}_${OS}_${ARCH}.tar.gz"
+# Use version without leading 'v' in archive file name
+PLAIN_VERSION="${LATEST_VERSION#v}"
+ARCHIVE_NAME="pbuf_${PLAIN_VERSION}_${OS}_${ARCH}.tar.gz"
 DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_VERSION/$ARCHIVE_NAME"
 
 echo "Downloading $ARCHIVE_NAME..."
