@@ -17,6 +17,27 @@ import (
 
 // NewInsecureClient generates insecure grpc client
 func NewInsecureClient(config *model.Config, netrcAuth *netrc.Netrc) v1.RegistryClient {
+	return v1.NewRegistryClient(NewInsecureConn(config, netrcAuth))
+}
+
+// NewSecureClient generates secure grpc client
+// Should use TLS to secure the connection
+func NewSecureClient(config *model.Config, netrcAuth *netrc.Netrc) v1.RegistryClient {
+	return v1.NewRegistryClient(NewSecureConn(config, netrcAuth))
+}
+
+// NewInsecureUserServiceClient generates insecure grpc client for UserService.
+func NewInsecureUserServiceClient(config *model.Config, netrcAuth *netrc.Netrc) v1.UserServiceClient {
+	return v1.NewUserServiceClient(NewInsecureConn(config, netrcAuth))
+}
+
+// NewSecureUserServiceClient generates secure grpc client for UserService.
+func NewSecureUserServiceClient(config *model.Config, netrcAuth *netrc.Netrc) v1.UserServiceClient {
+	return v1.NewUserServiceClient(NewSecureConn(config, netrcAuth))
+}
+
+// NewInsecureConn creates an insecure gRPC connection to registry.
+func NewInsecureConn(config *model.Config, netrcAuth *netrc.Netrc) *grpc.ClientConn {
 	addr := canonicalizeAddr(config.Registry.Addr)
 
 	opts := []grpc.DialOption{
@@ -28,14 +49,16 @@ func NewInsecureClient(config *model.Config, netrcAuth *netrc.Netrc) v1.Registry
 		opts = append(opts, grpc.WithPerRPCCredentials(perRPCCredentials))
 	}
 
-	grpcClient, _ := grpc.NewClient(addr, opts...)
+	grpcClient, err := grpc.NewClient(addr, opts...)
+	if err != nil {
+		log.Fatalf("failed to create grpc client: %v", err)
+	}
 
-	return v1.NewRegistryClient(grpcClient)
+	return grpcClient
 }
 
-// NewSecureClient generates secure grpc client
-// Should use TLS to secure the connection
-func NewSecureClient(config *model.Config, netrcAuth *netrc.Netrc) v1.RegistryClient {
+// NewSecureConn creates a secure (TLS) gRPC connection to registry.
+func NewSecureConn(config *model.Config, netrcAuth *netrc.Netrc) *grpc.ClientConn {
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
 		log.Fatalf("failed to load system cert pool: %v", err)
@@ -56,9 +79,12 @@ func NewSecureClient(config *model.Config, netrcAuth *netrc.Netrc) v1.RegistryCl
 		opts = append(opts, grpc.WithPerRPCCredentials(perRPCCredentials))
 	}
 
-	grpcClient, _ := grpc.NewClient(addr, opts...)
+	grpcClient, err := grpc.NewClient(addr, opts...)
+	if err != nil {
+		log.Fatalf("failed to create grpc client: %v", err)
+	}
 
-	return v1.NewRegistryClient(grpcClient)
+	return grpcClient
 }
 
 // canonicalizeAddr check has the address port or not

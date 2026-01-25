@@ -14,6 +14,7 @@ import (
 	"github.com/pbufio/pbuf-cli/internal/modules"
 	"github.com/pbufio/pbuf-cli/internal/registry"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 )
 
 // NewRootCmd creates cobra root command via function
@@ -60,16 +61,20 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	if modulesConfig.HasRegistry() {
-		var registryClient v1.RegistryClient
+		var conn grpc.ClientConnInterface
 		if modulesConfig.Registry.Insecure {
-			registryClient = registry.NewInsecureClient(modulesConfig, netrcAuth)
+			conn = registry.NewInsecureConn(modulesConfig, netrcAuth)
 		} else {
-			registryClient = registry.NewSecureClient(modulesConfig, netrcAuth)
+			conn = registry.NewSecureConn(modulesConfig, netrcAuth)
 		}
+
+		registryClient := v1.NewRegistryClient(conn)
+		usersClient := v1.NewUserServiceClient(conn)
 
 		rootCmd.AddCommand(NewModuleCmd(modulesConfig, registryClient))
 		rootCmd.AddCommand(NewVendorCmd(modulesConfig, netrcAuth, registryClient))
 		rootCmd.AddCommand(NewAuthCmd(modulesConfig, usr, netrcAuth))
+		rootCmd.AddCommand(NewUsersCmd(modulesConfig, usersClient))
 	} else {
 		rootCmd.AddCommand(NewVendorCmd(modulesConfig, netrcAuth, nil))
 	}
