@@ -71,12 +71,14 @@ func NewRootCmd() *cobra.Command {
 		registryClient := v1.NewRegistryClient(conn)
 		usersClient := v1.NewUserServiceClient(conn)
 		driftClient := v1.NewDriftServiceClient(conn)
+		metadataClient := v1.NewMetadataServiceClient(conn)
 
 		rootCmd.AddCommand(NewModuleCmd(modulesConfig, registryClient))
 		rootCmd.AddCommand(NewVendorCmd(modulesConfig, netrcAuth, registryClient))
 		rootCmd.AddCommand(NewAuthCmd(modulesConfig, usr, netrcAuth))
 		rootCmd.AddCommand(NewUsersCmd(modulesConfig, usersClient))
 		rootCmd.AddCommand(NewDriftCmd(modulesConfig, driftClient))
+		rootCmd.AddCommand(NewMetadataCmd(modulesConfig, metadataClient))
 	} else {
 		rootCmd.AddCommand(NewVendorCmd(modulesConfig, netrcAuth, nil))
 	}

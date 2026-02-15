@@ -313,6 +313,100 @@ pbuf modules delete [module_name]
 
 The command deletes all the tags and proto files associated with the module.
 
+##### Get Metadata
+
+The metadata command allows you to get parsed metadata (packages) for a module tag.
+
+```bash
+pbuf metadata get [module_name] [tag]
+```
+
+Replace `[module_name]` with the name of the module. Replace `[tag]` with the tag to get metadata for.
+
+> If `module_name` is not provided, the `name` from `pbuf.yaml` is used.
+
+#### Users / Bots
+
+The `users` command group allows you to manage users, bots, and permissions.
+
+##### Create User or Bot
+
+```bash
+pbuf users create [name] --type user|bot
+```
+
+Replace `[name]` with the user or bot name. The `--type` flag defaults to `user`.
+
+##### List Users
+
+```bash
+pbuf users list [--page-size 50] [--page 0]
+```
+
+##### Get User
+
+```bash
+pbuf users get [id]
+```
+
+##### Update User
+
+```bash
+pbuf users update [id] [--name new_name] [--active] [--inactive]
+```
+
+Only one of `--active` or `--inactive` can be set at a time.
+
+##### Delete User
+
+```bash
+pbuf users delete [id]
+```
+
+##### Regenerate Token
+
+```bash
+pbuf users regenerate-token [id]
+```
+
+##### Grant Permission
+
+```bash
+pbuf users grant-permission [user_id] [module_name] --permission read|write|admin
+```
+
+##### Revoke Permission
+
+```bash
+pbuf users revoke-permission [user_id] [module_name]
+```
+
+##### List Permissions
+
+```bash
+pbuf users list-permissions [user_id]
+```
+
+#### Drift Detection
+
+The `drift` command group allows you to manage drift detection events.
+
+##### List Drift Events
+
+```bash
+pbuf drift list [--unacknowledged-only]
+```
+
+The `--unacknowledged-only` flag defaults to `true` and filters to only unacknowledged events.
+
+##### Get Module Drift Events
+
+```bash
+pbuf drift module [module_name] [--tag tag_name]
+```
+
+Replace `[module_name]` with the name of the module. Use the optional `--tag` flag to filter by tag name.
+
 ---
 
 ### Configuration (`pbuf.yaml`)
