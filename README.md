@@ -407,6 +407,14 @@ pbuf drift module [module_name] [--tag tag_name]
 
 Replace `[module_name]` with the name of the module. Use the optional `--tag` flag to filter by tag name.
 
+##### Get Module Dependency Drift Status
+
+```bash
+pbuf drift dependencies [module_name] [--tag tag_name]
+```
+
+Replace `[module_name]` with the name of the module. Use the optional `--tag` flag to evaluate dependency drift for a specific module tag.
+
 ---
 
 ### Configuration (`pbuf.yaml`)
