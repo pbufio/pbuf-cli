@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"fmt"
+	"io"
+	"text/tabwriter"
+
 	v1 "github.com/pbufio/pbuf-cli/gen/pbuf-registry/v1"
 	"github.com/pbufio/pbuf-cli/internal/model"
 	"github.com/spf13/cobra"
@@ -18,6 +22,7 @@ func NewDriftCmd(_ *model.Config, client v1.DriftServiceClient) *cobra.Command {
 
 	driftCmd.AddCommand(newListDriftEventsCmd(client))
 	driftCmd.AddCommand(newGetModuleDriftEventsCmd(client))
+	driftCmd.AddCommand(newGetModuleDependencyDriftStatusCmd(client))
 
 	return driftCmd
 }
@@ -80,4 +85,77 @@ func newGetModuleDriftEventsCmd(client v1.DriftServiceClient) *cobra.Command {
 
 	getCmd.Flags().String("tag", "", "filter drift events by tag name")
 	return getCmd
+}
+
+func newGetModuleDependencyDriftStatusCmd(client v1.DriftServiceClient) *cobra.Command {
+	getCmd := &cobra.Command{
+		Use:   "dependencies [module_name]",
+		Short: "Get dependency drift status",
+		Long:  "Dependencies is a command to get dependency drift status for a specific module",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			moduleName := args[0]
+			tagName, err := cmd.Flags().GetString("tag")
+			if err != nil {
+				return err
+			}
+
+			req := &v1.GetModuleDependencyDriftStatusRequest{
+				ModuleName: moduleName,
+			}
+			if tagName != "" {
+				req.TagName = &tagName
+			}
+
+			resp, err := client.GetModuleDependencyDriftStatus(cmd.Context(), req)
+			if err != nil {
+				return err
+			}
+
+			return printDependencyDriftStatuses(cmd.OutOrStdout(), moduleName, tagName, resp.GetStatuses())
+		},
+	}
+
+	getCmd.Flags().String("tag", "", "module tag to evaluate (latest stable when omitted)")
+	return getCmd
+}
+
+func printDependencyDriftStatuses(w io.Writer, moduleName, tagName string, statuses []*v1.DependencyDriftStatus) error {
+	if _, err := fmt.Fprintf(w, "Dependency drift status for %s", moduleName); err != nil {
+		return err
+	}
+	if tagName != "" {
+		if _, err := fmt.Fprintf(w, " (tag: %s)", tagName); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+
+	if len(statuses) == 0 {
+		_, err := fmt.Fprintln(w, "No dependency drift detected.")
+		return err
+	}
+
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	if _, err := fmt.Fprintln(tw, "DEPENDENCY\tCURRENT\tTARGET\tSEVERITY\tRECOMMENDATION"); err != nil {
+		return err
+	}
+
+	for _, status := range statuses {
+		if _, err := fmt.Fprintf(
+			tw,
+			"%s\t%s\t%s\t%s\t%s\n",
+			status.GetDependencyName(),
+			status.GetCurrentTag(),
+			status.GetTargetTag(),
+			status.GetSeverity().String(),
+			status.GetRecommendation().String(),
+		); err != nil {
+			return err
+		}
+	}
+
+	return tw.Flush()
 }
