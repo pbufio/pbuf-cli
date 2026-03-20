@@ -231,9 +231,6 @@ func TestIntegration_VendorSkipsDuplicates(t *testing.T) {
 	// it's only vendored once (from config, not again as transitive)
 	server := newTestRegistryServer()
 
-	pullCount := 0
-	originalAddModule := server.addModule
-
 	server.addModule("org/module-a", "v1.0.0",
 		[]*v1.ProtoFile{
 			{Filename: "a.proto", Content: `syntax = "proto3"; package a;`},
@@ -242,8 +239,6 @@ func TestIntegration_VendorSkipsDuplicates(t *testing.T) {
 			{Name: "org/module-b", Tag: "v1.0.0", DependencyType: "direct"},
 		},
 	)
-
-	_ = originalAddModule
 
 	server.addModule("org/module-b", "v1.0.0",
 		[]*v1.ProtoFile{
@@ -277,7 +272,6 @@ func TestIntegration_VendorSkipsDuplicates(t *testing.T) {
 	defer conn.Close()
 
 	client := v1.NewRegistryClient(conn)
-	_ = pullCount
 
 	tmpDir := t.TempDir()
 	origDir, _ := os.Getwd()
