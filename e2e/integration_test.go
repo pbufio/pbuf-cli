@@ -128,7 +128,7 @@ func startTestServer(t *testing.T, server *testRegistryServer) (v1.RegistryClien
 
 	client := v1.NewRegistryClient(conn)
 	cleanup := func() {
-		conn.Close()
+		_ = conn.Close()
 		grpcServer.Stop()
 	}
 
@@ -269,7 +269,7 @@ func TestIntegration_VendorSkipsDuplicates(t *testing.T) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	client := v1.NewRegistryClient(conn)
 
@@ -337,7 +337,7 @@ func TestIntegration_PushWithDependencyType(t *testing.T) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	client := v1.NewRegistryClient(conn)
 
