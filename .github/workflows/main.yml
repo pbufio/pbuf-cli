@@ -29,6 +29,9 @@ jobs:
         with:
           version: v2.7
 
+      - name: Run Tests
+        run: make test
+
       - name: Build Go
         run: CGO_ENABLED=0 GOOS=linux make build
 

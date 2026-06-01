@@ -206,8 +206,9 @@ func NewPushModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Com
 			for _, dependency := range config.Modules {
 				if dependency.Name != "" && dependency.Repository == "" {
 					dependencies = append(dependencies, &v1.Dependency{
-						Name: dependency.Name,
-						Tag:  dependency.Tag,
+						Name:           dependency.Name,
+						Tag:            dependency.Tag,
+						DependencyType: "direct",
 					})
 				}
 			}
@@ -314,6 +315,11 @@ func NewGetModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Comm
 
 			moduleName := args[0]
 
+			resolveTransitive, err := cmd.Flags().GetBool("resolve-transitive")
+			if err != nil {
+				log.Fatalf("failed to get resolve-transitive flag: %v", err)
+			}
+
 			module, err := client.GetModule(cmd.Context(), &v1.GetModuleRequest{
 				Name: moduleName,
 			})
@@ -323,7 +329,8 @@ func NewGetModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Comm
 			}
 
 			moduleDependencies, err := client.GetModuleDependencies(cmd.Context(), &v1.GetModuleDependenciesRequest{
-				Name: moduleName,
+				Name:              moduleName,
+				ResolveTransitive: resolveTransitive,
 			})
 
 			if err != nil {
@@ -345,6 +352,8 @@ func NewGetModuleCmd(config *model.Config, client v1.RegistryClient) *cobra.Comm
 			log.Printf("module dependencies:\n%+v\n", string(marshalled))
 		},
 	}
+
+	getModuleCmd.PersistentFlags().Bool("resolve-transitive", false, "resolve transitive dependencies")
 
 	return getModuleCmd
 }

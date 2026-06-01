@@ -1,8 +1,10 @@
 package modules
 
 import (
+	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/jdx/go-netrc"
 	v1 "github.com/pbufio/pbuf-cli/gen/pbuf-registry/v1"
@@ -42,6 +44,60 @@ func newProtoPatchers() []patcher.Patcher {
 	return result
 }
 
+const depsTimeout = 60 * time.Second
+
+// resolveTransitiveDependencies fetches transitive dependencies from the registry
+// for each configured registry module and returns additional modules to vendor.
+// Only "direct" type transitive dependencies are returned (needed for compilation).
+func resolveTransitiveDependencies(config *model.Config, client v1.RegistryClient) []*model.Module {
+	configured := make(map[string]bool)
+	for _, m := range config.Modules {
+		if m.Name != "" {
+			configured[m.Name] = true
+		}
+	}
+
+	var additional []*model.Module
+	seen := make(map[string]bool)
+
+	for _, module := range config.Modules {
+		if module.Repository != "" || module.Name == "" || module.Tag == "" {
+			continue
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), depsTimeout)
+		resp, err := client.GetModuleDependencies(ctx, &v1.GetModuleDependenciesRequest{
+			Name:               module.Name,
+			Tag:                module.Tag,
+			ResolveTransitive:  true,
+		})
+		cancel()
+
+		if err != nil {
+			log.Printf("warning: failed to resolve transitive dependencies for %s: %v", module.Name, err)
+			continue
+		}
+
+		for _, dep := range resp.Dependencies {
+			if dep.DependencyType != "direct" {
+				continue
+			}
+
+			if configured[dep.Name] || seen[dep.Name] {
+				continue
+			}
+
+			seen[dep.Name] = true
+			additional = append(additional, &model.Module{
+				Name: dep.Name,
+				Tag:  dep.Tag,
+			})
+		}
+	}
+
+	return additional
+}
+
 // Vendor function that iterate over the modules and vendor proto files from git repositories
 func Vendor(config *model.Config, netrcAuth *netrc.Netrc, client v1.RegistryClient) error {
 	patchers := newProtoPatchers()
@@ -68,6 +124,18 @@ func Vendor(config *model.Config, netrcAuth *netrc.Netrc, client v1.RegistryClie
 			err := git.VendorGitModule(module, netrcAuth, patchers)
 			if err != nil {
 				log.Fatalf("failed to vendor module %s: %v", module.Repository, err)
+			}
+		}
+	}
+
+	// resolve and vendor transitive dependencies from registry
+	if config.HasRegistry() && client != nil {
+		transitiveDeps := resolveTransitiveDependencies(config, client)
+		for _, module := range transitiveDeps {
+			log.Printf("vendoring transitive dependency: %s@%s", module.Name, module.Tag)
+			err := registry.VendorRegistryModule(module, client, patchers)
+			if err != nil {
+				log.Fatalf("failed to vendor transitive dependency %s: %v", module.Name, err)
 			}
 		}
 	}
